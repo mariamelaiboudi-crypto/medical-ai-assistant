@@ -1,0 +1,187 @@
+# 🏥 JEUX DE TESTS — Système Assistant Médical
+# Usage académique uniquement
+# ─────────────────────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════════════════════
+CAS 1 — SYNDROME RESPIRATOIRE SIMPLE
+Gravité attendue : MODÉRÉE (score ~5)
+═══════════════════════════════════════════════════════════════════════════════
+
+── ÉCRAN 1 : Saisie ──────────────────────────────────────────────────────────
+Nom du patient   : Ahmed Benali
+Motif            : J'ai de la toux et du mal à respirer depuis quelques jours
+
+── ÉCRAN 2 : Questions / Réponses ────────────────────────────────────────────
+Q1 - Depuis combien de temps ressentez-vous ces symptômes ?
+     → 3 jours
+
+Q2 - Pouvez-vous décrire l'intensité de votre douleur sur une échelle de 1 à 10 ?
+     → 4
+
+Q3 - Avez-vous de la fièvre ? Si oui, quelle température ?
+     → Oui, 38.2°C
+
+Q4 - Avez-vous pris des médicaments récemment ? Lesquels ?
+     → Non, aucun
+
+Q5 - Avez-vous des antécédents médicaux ou des allergies connues ?
+     → Asthme léger diagnostiqué il y a 5 ans
+
+── ÉCRAN 3 : Revue médecin ───────────────────────────────────────────────────
+Observations cliniques :
+     Auscultation : légère bronchospasme bilatéral. Saturation O2 97%.
+     Pas de signe de détresse respiratoire aiguë. Rhinopharyngite associée.
+
+Plan de traitement :
+     Bronchodilatateur en inhalation 2 bouffées x3/jour.
+     Paracétamol 1g si fièvre. Repos 3 jours.
+     Consultation de contrôle si aggravation sous 48h.
+
+── RÉSULTATS ATTENDUS ────────────────────────────────────────────────────────
+✔ Score gravité   : ~5 (MODÉRÉE)
+✔ Urgence MCP     : MODÉRÉE
+✔ Recommandation  : Repos strict, hydratation, consulter dans les 24h
+✔ Rapport final   : Synthèse + observations médecin + traitement
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CAS 2 — RED FLAGS (URGENCE ÉLEVÉE)
+Gravité attendue : ÉLEVÉE (score ~9)
+═══════════════════════════════════════════════════════════════════════════════
+
+── ÉCRAN 1 : Saisie ──────────────────────────────────────────────────────────
+Nom du patient   : Fatima Zahra
+Motif            : J'ai une douleur thoracique intense avec essoufflement depuis ce matin
+
+── ÉCRAN 2 : Questions / Réponses ────────────────────────────────────────────
+Q1 - Depuis combien de temps ressentez-vous ces symptômes ?
+     → Depuis 4 heures ce matin, apparu brutalement
+
+Q2 - Pouvez-vous décrire l'intensité de votre douleur sur une échelle de 1 à 10 ?
+     → 9
+
+Q3 - Avez-vous de la fièvre ? Si oui, quelle température ?
+     → Non mais je transpire beaucoup et j'ai des nausées
+
+Q4 - Avez-vous pris des médicaments récemment ? Lesquels ?
+     → Aspirine 100mg par jour pour le cœur
+
+Q5 - Avez-vous des antécédents médicaux ou des allergies connues ?
+     → Hypertension artérielle, diabète type 2 depuis 10 ans
+
+── ÉCRAN 3 : Revue médecin ───────────────────────────────────────────────────
+Observations cliniques :
+     RED FLAG : douleur thoracique brutale + dyspnée + terrain cardiovasculaire.
+     Sueurs froides, nausées associées. Suspicion syndrome coronarien aigu.
+     ECG urgence requis immédiatement.
+
+Plan de traitement :
+     Appel SAMU (15) immédiat. Ne pas laisser la patiente seule.
+     ECG 12 dérivations en urgence. Bilan biologique (troponine, NFS, coagulation).
+     Aspirine 250mg si non contre-indiqué. Oxygénothérapie si SpO2 < 94%.
+
+── RÉSULTATS ATTENDUS ────────────────────────────────────────────────────────
+✔ Score gravité   : ~9 (ÉLEVÉE)
+✔ Urgence MCP     : ÉLEVÉE
+✔ Recommandation  : Consultation médicale urgente, appeler le 15
+✔ Rapport final   : Alerte red flag visible + conduite d'urgence
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CAS 3 — CAS BÉNIN
+Gravité attendue : FAIBLE (score ~2)
+═══════════════════════════════════════════════════════════════════════════════
+
+── ÉCRAN 1 : Saisie ──────────────────────────────────────────────────────────
+Nom du patient   : Youssef Alami
+Motif            : J'ai un petit rhume avec le nez qui coule
+
+── ÉCRAN 2 : Questions / Réponses ────────────────────────────────────────────
+Q1 - Depuis combien de temps ressentez-vous ces symptômes ?
+     → 2 jours
+
+Q2 - Pouvez-vous décrire l'intensité de votre douleur sur une échelle de 1 à 10 ?
+     → 2
+
+Q3 - Avez-vous de la fièvre ? Si oui, quelle température ?
+     → Non, température normale 36.8°C
+
+Q4 - Avez-vous pris des médicaments récemment ? Lesquels ?
+     → Doliprane 500mg ce matin
+
+Q5 - Avez-vous des antécédents médicaux ou des allergies connues ?
+     → Aucun antécédent, allergie aux arachides uniquement
+
+── ÉCRAN 3 : Revue médecin ───────────────────────────────────────────────────
+Observations cliniques :
+     Rhinite virale banale. Muqueuses nasales congestionnées bilatéralement.
+     Pas de sinusite, pas d'otite. Gorge légèrement rouge.
+     État général conservé, apyrétique.
+
+Plan de traitement :
+     Sérum physiologique nasal 3x/jour.
+     Repos recommandé 1-2 jours. Hydratation suffisante (2L/jour).
+     Pas d'antibiotique nécessaire (origine virale).
+     Évolution favorable attendue sous 5-7 jours.
+     Consulter si fièvre > 38.5°C ou aggravation.
+
+── RÉSULTATS ATTENDUS ────────────────────────────────────────────────────────
+✔ Score gravité   : ~2 (FAIBLE)
+✔ Urgence MCP     : FAIBLE
+✔ Recommandation  : Repos, hydratation, surveillance 24-48h
+✔ Rapport final   : Synthèse bénigne + conseils de bon sens
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CHECKLIST DE VALIDATION — À VÉRIFIER POUR CHAQUE CAS
+═══════════════════════════════════════════════════════════════════════════════
+
+Pour chaque scénario, cochez les points suivants :
+
+ÉCRAN 2 — Questions
+  □ 5 questions posées séquentiellement (Q1 → Q2 → Q3 → Q4 → Q5)
+  □ Chaque réponse acceptée et enregistrée dans l'historique
+  □ Passage automatique à l'écran 3 après Q5
+
+ÉCRAN 3 — Synthèse IA + Revue médecin
+  □ diagnostic_summary affiché (généré par DiagnosticAgent + LLM)
+  □ interim_care affiché (généré par MCP recommend_interim_care)
+  □ Score de gravité cohérent avec le cas
+  □ Champs médecin remplissables et soumis
+
+ÉCRAN 4 — Rapport final
+  □ Nom patient affiché
+  □ Motif de consultation affiché
+  □ Historique Q/R visible (expandable)
+  □ Synthèse diagnostique IA présente
+  □ Recommandations MCP présentes
+  □ Observations médecin présentes
+  □ Plan de traitement présent
+  □ Avertissement académique affiché
+
+API — Endpoints (tester via http://localhost:8000/docs)
+  □ POST /start_session        → session_id retourné
+  □ POST /start_consultation   → thread_id + première question
+  □ POST /consultation/resume  → question suivante ou status=physician_review
+  □ GET  /consultation/{id}    → status + diagnostic_summary + interim_care
+  □ GET  /consultation/{id}/report → rapport complet
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NOTES
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️  Ce système est un outil académique.
+    Il ne remplace pas une consultation médicale réelle.
+
+Services à démarrer avant les tests :
+  Terminal 1 → py mcp_server/server.py          (port 8001)
+  Terminal 2 → langgraph dev                     (port 2024)
+  Terminal 3 → uvicorn backend.app.api:app --port 8000 --reload
+  Terminal 4 → streamlit run frontend/app.py     (port 8501)
+
+URL utiles :
+  Streamlit   → http://localhost:8501
+  FastAPI docs→ http://localhost:8000/docs
+  LangSmith   → http://localhost:2024 (langgraph dev)
+  MCP SSE     → http://localhost:8001/sse

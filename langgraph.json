@@ -1,0 +1,10 @@
+{
+  "source": {
+    "kind": "uv",
+    "root": "."
+  },
+  "graphs": {
+    "medical_graph": "./backend/app/graph.py:graph"
+  },
+  "env": ".env"
+}

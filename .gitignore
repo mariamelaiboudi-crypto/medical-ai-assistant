@@ -1,0 +1,60 @@
+# ── Environnement Python ──────────────────────────────────────────
+venv/
+.venv/
+env/
+.env
+*.env
+
+# ── Variables d'environnement (JAMAIS commiter les clés API) ─────
+.env.local
+.env.production
+.env.*.local
+
+# ── Python cache ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# ── LangGraph / SQLite checkpoints ───────────────────────────────
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs ─────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Polices téléchargées (générées automatiquement) ──────────────
+fonts/
+*.ttf
+*.otf
+
+# ── Rapports PDF générés ─────────────────────────────────────────
+*.pdf
+
+# ── LangGraph Studio ─────────────────────────────────────────────
+.langgraph_api/
+
+# ── VS Code ──────────────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Distribution / Build ─────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# ── Jupyter (si utilisé) ─────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb

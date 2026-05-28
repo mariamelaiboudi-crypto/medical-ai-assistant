@@ -1,0 +1,15 @@
+langgraph
+ipython
+langchain-core
+langchain-openai
+python-dotenv
+langchain_groq 
+loguru
+langgraph-checkpoint-sqlite
+langgraph-cli[inmem]>=0.4.20,<0.5
+mcp
+langchain-mcp-adapters
+fastapi
+uvicorn
+streamlit
+fpdf2
