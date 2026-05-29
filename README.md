@@ -1,280 +1,317 @@
-# 🏥 Système Multi-Agents d'Assistance Médicale
+# Medical AI Assistant
 
-> Projet académique — Ne remplace pas une consultation médicale réelle
+A multi-agent clinical consultation system built with **LangGraph**, **FastAPI**, **Streamlit**, and **Model Context Protocol (MCP)**. The system guides a patient through a structured intake interview, generates an AI diagnostic summary, collects physician feedback via a human-in-the-loop interrupt, and produces a downloadable PDF report.
 
-Un système d'orientation clinique préliminaire basé sur des agents IA,
-construit avec LangGraph, FastAPI, MCP et Streamlit.
-
----
-
-## 📋 Ce que fait l'application
-
-1. **Patient** saisit ses symptômes
-2. **L'IA** pose 5 questions cliniques
-3. **L'IA** génère une synthèse + recommandations
-4. **Le médecin** valide et ajoute son traitement
-5. **Un rapport PDF** est généré et téléchargeable
+> **Academic use only.** This system does not replace a real medical consultation.
 
 ---
 
-## 🗂️ Structure du projet
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Environment Variables](#environment-variables)
+- [Running the Application](#running-the-application)
+  - [Method 1 — Terminal](#method-1--terminal)
+  - [Method 2 — Docker](#method-2--docker)
+- [API Reference](#api-reference)
+- [Workflow](#workflow)
+- [Consultation Screens](#consultation-screens)
+
+---
+
+## Architecture
+
+The system is composed of four independent services that communicate over HTTP:
 
 ```
-projet_sma/
+┌─────────────────────────────────────────────────────────────┐
+│                        User Browser                         │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTP
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Streamlit Frontend  :8501                      │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ REST
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                FastAPI Backend  :8000                       │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ LangGraph SDK
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│            LangGraph Dev Server  :2024                      │
+│                                                             │
+│   START → Supervisor → DiagnosticAgent ──┐                 │
+│                ▲               │          │                 │
+│                └───────────────┘          │                 │
+│                ▲                          ▼                 │
+│           PhysicianReview ◄── Supervisor ◄── ReportAgent   │
+│                                   │                         │
+│                                  END                        │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ SSE / MCP
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                MCP Server  :8001                            │
+│         ask_patient  │  recommend_interim_care              │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ API call
+                            ▼
+                     Groq LLM  (external)
+```
+
+| Service | Port | Role |
+|---|---|---|
+| MCP Server | 8001 | Exposes clinical tools via Model Context Protocol |
+| LangGraph | 2024 | Stateful multi-agent graph with HITL interrupt |
+| FastAPI | 8000 | REST API consumed by the frontend |
+| Streamlit | 8501 | 4-screen patient-facing UI with PDF export |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Agent orchestration | [LangGraph](https://github.com/langchain-ai/langgraph) 0.4+ |
+| LLM provider | [Groq](https://groq.com/) — `llama-3.3-70b-versatile` |
+| Tool protocol | [Model Context Protocol](https://modelcontextprotocol.io/) — FastMCP |
+| REST API | [FastAPI](https://fastapi.tiangolo.com/) + Uvicorn |
+| Frontend | [Streamlit](https://streamlit.io/) |
+| PDF generation | [fpdf2](https://py-pdf.github.io/fpdf2/) |
+| Observability | [LangSmith](https://smith.langchain.com/) |
+| Containerisation | Docker + Docker Compose |
+
+---
+
+## Project Structure
+
+```
+medical-ai-assistant/
 │
 ├── backend/
 │   └── app/
-│       ├── api.py                  # API FastAPI (5 endpoints REST)
-│       ├── state.py                # État partagé entre agents
-│       ├── graph.py                # Graphe LangGraph
+│       ├── api.py                  # FastAPI — 5 REST endpoints
+│       ├── graph.py                # LangGraph workflow compilation
+│       ├── state.py                # MedicalState schema
 │       ├── nodes/
-│       │   ├── supervisor.py       # Routage entre agents
-│       │   ├── diagnostic_agent.py # Questions + synthèse IA
-│       │   ├── physician_review.py # Revue médecin (HITL)
-│       │   └── report_agent.py     # Génération rapport final
+│       │   ├── supervisor.py       # Routing logic
+│       │   ├── diagnostic_agent.py # Patient interview + AI summary
+│       │   ├── physician_agent.py  # HITL physician review (interrupt)
+│       │   └── report_agent.py     # Final report generation
 │       └── tools/
-│           └── mcp_client.py       # Client MCP (pont async→sync)
+│           ├── mcp_client.py       # MCP SSE client (async → sync bridge)
+│           ├── patient_tools.py
+│           └── care_tools.py
 │
 ├── mcp_server/
-│   └── server.py                   # Serveur MCP (outils médicaux)
+│   └── server.py                   # FastMCP — ask_patient, recommend_interim_care
 │
 ├── frontend/
-│   └── app.py                      # Interface Streamlit (4 écrans)
+│   └── app.py                      # Streamlit UI — 4 screens
 │
-├── langgraph.json                  # Config LangGraph
-├── .env                            # Variables d'environnement
-├── requirements.txt                # Dépendances Python
-└── README.md
+├── Dockerfile                      # Single image for all services
+├── docker-compose.yml              # Orchestrates all 4 services
+├── .env                            # Secrets (not committed)
+├── .env.docker                     # Docker URL overrides (no secrets)
+├── langgraph.json                  # LangGraph CLI config
+└── requirements.txt                # Python dependencies
 ```
 
 ---
 
-## ⚙️ Prérequis
+## Prerequisites
 
-- Python 3.11 ou plus récent
-- Node.js (optionnel, pour la doc)
-- Un compte [Groq](https://console.groq.com) (gratuit) pour la clé API
-- Un compte [LangSmith](https://smith.langchain.com) (gratuit) pour LangGraph
+| Requirement | Version |
+|---|---|
+| Python | 3.11+ |
+| Docker Desktop | 4.x+ (for Docker method only) |
+| Groq API key | [console.groq.com](https://console.groq.com) |
+| LangSmith API key | [smith.langchain.com](https://smith.langchain.com) — optional, for tracing |
 
 ---
 
-## 🚀 Installation — Étape par étape
+## Environment Variables
 
-### Étape 1 — Cloner le projet
+Create a `.env` file at the project root:
 
-```bash
-git clone https://github.com/VOTRE_USERNAME/projet_sma.git
-cd projet_sma
+```env
+# LLM
+GROQ_API_KEY=gsk_...
+
+# Observability (optional)
+LANGSMITH_API_KEY=lsv2_...
+LANGSMITH_TRACING=true
+
+# Service URLs (terminal defaults — overridden by .env.docker in Docker)
+LANGGRAPH_URL=http://localhost:2024
+MCP_SERVER_URL=http://localhost:8001
 ```
 
-### Étape 2 — Créer l'environnement virtuel
+> `.env` is git-ignored. Never commit API keys.
 
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+---
 
-# Mac / Linux
-python -m venv venv
-source venv/bin/activate
-```
+## Running the Application
 
-### Étape 3 — Installer les dépendances
+### Method 1 — Terminal
+
+Install dependencies once:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Étape 4 — Créer le fichier .env
+Open **4 terminals** in the project root and run one command per terminal, in order:
 
-Créez un fichier `.env` à la racine du projet :
-
-```env
-# Clé API Groq (https://console.groq.com → API Keys)
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# Clé API LangSmith (https://smith.langchain.com → Settings → API Keys)
-LANGCHAIN_API_KEY=lsv2_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=medical_graph
-
-# URLs des services (ne pas modifier)
-LANGGRAPH_URL=http://localhost:2024
-GRAPH_NAME=medical_graph
-MCP_SERVER_URL=http://localhost:8001
-MCP_TRANSPORT=sse
-
-# Modèle LLM
-LLM_MODEL=llama-3.3-70b-versatile
-```
-
----
-
-## ▶️ Lancement — 4 terminaux
-
-Ouvrez **4 terminaux séparés** dans le dossier du projet.
-Activez le venv dans chacun : `venv\Scripts\activate` (Windows)
-
-### Terminal 1 — Serveur MCP
-
+**Terminal 1 — MCP Server**
 ```bash
-py mcp_server/server.py
+python mcp_server/server.py
+# Listening on http://localhost:8001
 ```
 
-✅ Succès :
-```
-MCP Server démarré sur http://localhost:8001 ...
-INFO: Uvicorn running on http://localhost:8001
-```
-
-### Terminal 2 — LangGraph
-
+**Terminal 2 — LangGraph**
 ```bash
 langgraph dev
+# Listening on http://localhost:2024
 ```
 
-✅ Succès :
-```
-Ready!
-- API: http://localhost:2024
-```
-
-### Terminal 3 — FastAPI
-
+**Terminal 3 — FastAPI**
 ```bash
 uvicorn backend.app.api:app --port 8000 --reload
+# Listening on http://localhost:8000  (docs at /docs)
 ```
 
-✅ Succès :
-```
-INFO: Uvicorn running on http://127.0.0.1:8000
-```
-
-### Terminal 4 — Streamlit
-
+**Terminal 4 — Streamlit**
 ```bash
 streamlit run frontend/app.py
+# Listening on http://localhost:8501
 ```
 
-✅ Succès :
-```
-You can now view your Streamlit app in your browser.
-Local URL: http://localhost:8501
-```
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## 🌐 URLs utiles
+### Method 2 — Docker
 
-| Service       | URL                          | Utilité                        |
-|---------------|------------------------------|--------------------------------|
-| Application   | http://localhost:8501        | Interface principale           |
-| API docs      | http://localhost:8000/docs   | Tester les endpoints REST      |
-| LangGraph     | http://localhost:2024        | Monitoring du graphe           |
-| MCP SSE       | http://localhost:8001/sse    | Vérifier que MCP tourne        |
+Requires Docker Desktop to be running.
 
----
+**Build and start all services:**
 
-## 🧪 Jeux de tests
+```bash
+docker compose up --build
+```
 
-### Cas 1 — Syndrome respiratoire (gravité modérée ~5/10)
+**Stop all services:**
 
-| Champ | Valeur |
-|-------|--------|
-| Nom | Ahmed Benali |
-| Motif | J'ai de la toux et du mal à respirer depuis quelques jours |
-| Q1 | 3 jours |
-| Q2 | 4 |
-| Q3 | Oui, 38.2°C |
-| Q4 | Non, aucun |
-| Q5 | Asthme léger depuis 5 ans |
-| Médecin — Observations | Bronchospasme léger bilatéral. SpO2 97%. Pas de détresse. |
-| Médecin — Traitement | Bronchodilatateur 2 bouffées x3/j. Paracétamol si fièvre. Repos 3j. |
+```bash
+docker compose down
+```
 
-### Cas 2 — Red flags / Urgence (gravité élevée ~9/10)
+**Rebuild after a code change:**
 
-| Champ | Valeur |
-|-------|--------|
-| Nom | Fatima Zahra |
-| Motif | Douleur thoracique intense avec essoufflement depuis ce matin |
-| Q1 | Depuis 4 heures, brutal |
-| Q2 | 9 |
-| Q3 | Non mais sueurs froides et nausées |
-| Q4 | Aspirine 100mg/jour |
-| Q5 | Hypertension, diabète type 2 |
-| Médecin — Observations | RED FLAG : suspicion syndrome coronarien aigu. ECG urgent. |
-| Médecin — Traitement | Appel SAMU (15). Ne pas laisser seule. Bilan troponine urgent. |
+```bash
+docker compose up --build --remove-orphans
+```
 
-### Cas 3 — Cas bénin (gravité faible ~2/10)
+Open [http://localhost:8501](http://localhost:8501) once all four containers are healthy.
 
-| Champ | Valeur |
-|-------|--------|
-| Nom | Youssef Alami |
-| Motif | Petit rhume avec le nez qui coule |
-| Q1 | 2 jours |
-| Q2 | 2 |
-| Q3 | Non, 36.8°C |
-| Q4 | Doliprane 500mg ce matin |
-| Q5 | Aucun antécédent, allergie aux arachides |
-| Médecin — Observations | Rhinite virale banale. Pas de sinusite ni otite. |
-| Médecin — Traitement | Sérum physiologique 3x/j. Repos. Pas d'antibiotique. |
-
----
-
-## ✅ Checklist de validation
-
-Pour chaque cas, vérifiez :
-
-- [ ] 5 questions posées séquentiellement
-- [ ] Passage automatique à l'écran Médecin après Q5
-- [ ] Synthèse diagnostique affichée (générée par LLM)
-- [ ] Recommandations MCP affichées (ask_patient / recommend_interim_care)
-- [ ] Formulaire médecin remplissable
-- [ ] Rapport final complet à l'écran 4
-- [ ] Bouton téléchargement PDF fonctionnel
-
----
-
-## 🔧 Dépendances principales
+Services start in dependency order enforced by health checks:
 
 ```
-langgraph
-langgraph-sdk
-langchain-groq
-langchain-mcp-adapters
-fastapi
-uvicorn
-streamlit
-fpdf2
-python-dotenv
-loguru
-mcp[cli]
+mcp  ──►  langgraph  ──►  api  ──►  frontend
+```
+
+> **Note on fonts:** Docker uses Liberation Sans (metrically compatible with Arial) for PDF generation. Output is visually identical to the Windows terminal build.
+
+---
+
+## API Reference
+
+Base URL: `http://localhost:8000`
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Service liveness check |
+| `POST` | `/start_session` | Create a patient session |
+| `POST` | `/start_consultation` | Launch the agent graph |
+| `POST` | `/consultation/resume` | Submit a patient answer or physician review |
+| `GET` | `/consultation/{thread_id}` | Poll current consultation state |
+| `GET` | `/consultation/{thread_id}/report` | Retrieve the final report |
+
+Interactive Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Quick example
+
+```bash
+# 1. Create a session
+curl -s -X POST http://localhost:8000/start_session \
+  -H "Content-Type: application/json" \
+  -d '{"patient_name": "Jean Dupont"}' | jq .
+
+# 2. Start consultation (use session_id from step 1)
+curl -s -X POST http://localhost:8000/start_consultation \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "<session_id>", "initial_complaint": "Maux de tête sévères depuis 2 jours"}' | jq .
+
+# 3. Submit a patient answer (use thread_id from step 2)
+curl -s -X POST http://localhost:8000/consultation/resume \
+  -H "Content-Type: application/json" \
+  -d '{"thread_id": "<thread_id>", "patient_answer": "Depuis ce matin, intensité 7/10"}' | jq .
 ```
 
 ---
 
-## ❓ Problèmes fréquents
+## Workflow
 
-**Le serveur MCP ne démarre pas sur le bon port**
-→ Vérifiez que `mcp = FastMCP(name="...", host="localhost", port=8001)`
+```
+Patient submits name + chief complaint
+            │
+            ▼
+      ┌─────────────┐
+      │  Supervisor │  ◄─────────────────────────────────┐
+      └──────┬──────┘                                     │
+             │                                            │
+    ┌────────▼────────┐                                   │
+    │ DiagnosticAgent │                                   │
+    │                 │  Calls MCP: ask_patient(0..4)     │
+    │                 │  ── HITL interrupt per question ──│
+    │                 │  Calls MCP: recommend_interim_care│
+    │                 │  Generates AI summary via Groq    │
+    └────────┬────────┘                                   │
+             │                                            │
+    ┌────────▼────────┐                                   │
+    │ PhysicianReview │  ◄── HITL interrupt               │
+    │                 │  Physician enters observations     │
+    │                 │  + treatment plan                 │
+    └────────┬────────┘                                   │
+             │                                            │
+    ┌────────▼────────┐                                   │
+    │  ReportAgent    │                                   │
+    │                 │  Compiles final report via Groq   │
+    └────────┬────────┘                                   │
+             └───────────────────────────────────────────►│
+                                                    Supervisor → END
+```
 
-**Erreur "Tool does not support sync invocation"**
-→ Utilisez `invoke_tool_sync()` au lieu de `tool.invoke()`
+**MCP Tools exposed by the server:**
 
-**Erreur 500 sur GET /consultation/{id}**
-→ Utilisez `state.get("values", {})` et jamais `state.values`
-
-**Streamlit bloqué sur "Création de la session..."**
-→ Vérifiez que FastAPI tourne sur le port 8000 : `http://localhost:8000/health`
-
-**LangGraph ne répond pas**
-→ Vérifiez que `langgraph dev` tourne et que `langgraph.json` existe
+| Tool | Parameters | Returns |
+|---|---|---|
+| `ask_patient` | `question_index: int (0–4)` | One of 5 standardised clinical questions |
+| `recommend_interim_care` | `symptoms_summary: str`, `severity_score: int (1–10)` | Urgency-rated care recommendations |
 
 ---
 
-## ⚠️ Avertissement
+## Consultation Screens
 
-Ce système est un **prototype académique**.
-Il ne constitue pas un dispositif médical et ne doit **jamais** être utilisé
-pour des décisions cliniques réelles.
-
+| # | Screen | Description |
+|---|---|---|
+| 1 | **Saisie** | Patient enters full name and chief complaint |
+| 2 | **Questions** | Patient answers 5 AI-generated clinical questions with a progress bar |
+| 3 | **Médecin** | Physician reviews the AI diagnostic summary and enters clinical observations + treatment plan |
+| 4 | **Rapport** | Final consultation report displayed in full with one-click PDF download |

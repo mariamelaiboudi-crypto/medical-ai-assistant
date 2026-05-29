@@ -10,6 +10,9 @@ env/
 .env.production
 .env.*.local
 
+# ── Docker ───────────────────────────────────────────────────────
+# .env.docker intentionally NOT ignored — it only contains URL overrides, no secrets
+
 # ── Python cache ─────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

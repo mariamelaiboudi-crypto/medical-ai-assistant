@@ -2,6 +2,7 @@
 mcp_server/server.py — Serveur MCP médical académique
 """
 import logging
+import os
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
@@ -84,6 +85,24 @@ def recommend_interim_care(
 
 if __name__ == "__main__":
     import uvicorn
-    print("MCP Server démarré sur http://localhost:8001 ...")
-    app = mcp.sse_app()  # expose l'app ASGI
-    uvicorn.run(app, host="localhost", port=8001)
+    host = os.environ.get("MCP_HOST", "localhost")
+    port = int(os.environ.get("MCP_PORT", "8001"))
+
+    raw_app = mcp.sse_app()
+
+    # The MCP SDK's SSE transport rejects requests whose Host header is not
+    # "localhost" (anti-DNS-rebinding check).  In Docker, callers send
+    # Host: <service-name>:<port> which triggers a 421.  This thin ASGI
+    # wrapper rewrites the header to "localhost:<port>" before the SDK sees
+    # it.  In plain terminal usage the header is already "localhost" so the
+    # wrapper is a no-op.
+    async def _normalise_host(scope, receive, send):
+        if scope["type"] == "http":
+            scope["headers"] = [
+                (b"host", f"localhost:{port}".encode()) if k == b"host" else (k, v)
+                for k, v in scope["headers"]
+            ]
+        await raw_app(scope, receive, send)
+
+    print(f"MCP Server démarré sur http://{host}:{port} ...")
+    uvicorn.run(_normalise_host, host=host, port=port)

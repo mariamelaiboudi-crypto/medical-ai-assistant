@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Secrets — passed at runtime via docker-compose env_file
+.env
+
+# LangGraph / SQLite runtime data
+data/
+*.db
+*.sqlite
+.langgraph_api/
+
+# Generated output
+*.pdf
+*.log
+logs/
+
+# Fonts (generated in container via apt)
+fonts/
+*.ttf
+*.otf
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Git
+.git/
+.gitignore

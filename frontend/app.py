@@ -2,6 +2,7 @@
 frontend/app.py — Interface Streamlit pour le système médical multi-agents
 4 écrans : saisie → questions → revue médecin → rapport final
 """
+import os
 import streamlit as st
 import requests
 import time
@@ -11,13 +12,13 @@ def generate_report_pdf(s) -> bytes:
     pdf = FPDF()
     pdf.add_page()
 
-    # ── Police Unicode (Arial système Windows) ─────────────────────
-    # ❌ AVANT : pdf.set_font("Helvetica", ...) → Latin-1, plante sur œ é à ç
-    # ✅ APRÈS : Arial TTF → Unicode complet, support français garanti
-    pdf.add_font("Arial", style="",  fname=r"C:\Windows\Fonts\arial.ttf")
-    pdf.add_font("Arial", style="B", fname=r"C:\Windows\Fonts\arialbd.ttf")
-    pdf.add_font("Arial", style="I", fname=r"C:\Windows\Fonts\ariali.ttf")
-    pdf.add_font("Arial", style="BI", fname=r"C:\Windows\Fonts\arialbi.ttf")
+    # ── Police Unicode (Arial / Liberation Sans) ────────────────────
+    # FONTS_DIR defaults to Windows path; set to /app/fonts in Docker
+    _fonts = os.environ.get("FONTS_DIR", r"C:\Windows\Fonts")
+    pdf.add_font("Arial", style="",  fname=os.path.join(_fonts, "arial.ttf"))
+    pdf.add_font("Arial", style="B", fname=os.path.join(_fonts, "arialbd.ttf"))
+    pdf.add_font("Arial", style="I", fname=os.path.join(_fonts, "ariali.ttf"))
+    pdf.add_font("Arial", style="BI", fname=os.path.join(_fonts, "arialbi.ttf"))
     # ───────────────────────────────────────────────────────────────
 
     pdf.set_font("Arial", "B", 16)
@@ -49,7 +50,7 @@ def generate_report_pdf(s) -> bytes:
     return bytes(pdf.output())
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-API_URL = "http://localhost:8000"
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="Assistant Médical",
